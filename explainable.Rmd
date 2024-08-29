@@ -1,0 +1,79 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+
+explain <- read_csv("chloro_loc_model.explain")
+
+explain_formatted <- explain %>%
+  select(id, pred_prob, pred_name, label, word_attributions) %>%
+      separate_rows(word_attributions, sep = " ") %>% 
+      group_by(id) %>%
+         mutate(rowid = 1:n())%>% 
+  ungroup %>%
+
+filter(pred_name == "Chloroplast") %>%
+  filter(label == "Chloroplast") %>%
+  mutate(word_attributions = as.double(word_attributions)) %>% 
+    mutate(word_attributions = case_when(word_attributions > 0.1 ~ 0.1,
+                                         word_attributions < -0.1 ~ -0.1,
+                                         TRUE ~ word_attributions)) %>%
+  #head(100) %>%
+  arrange(pred_prob) 
+  
+
+library(zoo)
+theme_set(theme_cowplot(font_size = 8))
+  explain_formatted %>%
+  
+  ggplot(aes(y= fct_inorder(id), label = pred_prob, x = rowid, fill = as.double(word_attributions))) +
+    geom_tile() + 
+    
+    scale_fill_gradient2(high = "red", low = "blue", name = "Attribution" ) +
+  facet_wrap(~pred_name + label, nrow = 2, scales= "free_y") +
+    ylab("Gene") +
+    ylab("Amino acid position")
+  
+
+explain_formatted_plot <- explain_formatted %>%
+  group_by(id) %>%
+  mutate(max = max(rowid)) %>%
+    mutate(roll_mean = rollmean(word_attributions, 10, na.pad = T)) %>%
+  ungroup %>%
+    ggplot(aes(y= fct_rev(fct_reorder(id, max)), label = pred_prob, x = rowid, fill = as.double(roll_mean))) +
+    geom_tile() + 
+    
+    scale_fill_gradient2(high = "red", low = "blue", na.value = "white", name = "Attribution" ) +
+  facet_wrap(~pred_name + label, nrow = 2, scales= "free_y")+
+    ylab("Gene") +
+    xlab("Amino acid position") +
+  theme(panel.background = element_rect(colour = "white"))
+
+
+
+explain_formatted_plot  %>% ggsave("explain_formatted_plot.png", .,  device = "png", height = 4, width = 4.5, units = "in")
+explain_formatted_plot  %>% ggsave("explain_formatted_plot.pdf", .,  device = "pdf", height = 4, width = 4.5, units = "in")
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
