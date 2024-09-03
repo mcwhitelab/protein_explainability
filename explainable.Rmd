@@ -66,14 +66,3 @@ explain_formatted_plot <- explain_formatted %>%
 explain_formatted_plot  %>% ggsave("explain_formatted_plot.png", .,  device = "png", height = 4, width = 4.5, units = "in")
 explain_formatted_plot  %>% ggsave("explain_formatted_plot.pdf", .,  device = "pdf", height = 4, width = 4.5, units = "in")
 
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
